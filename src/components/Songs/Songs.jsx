@@ -13,12 +13,18 @@ export default function Songs() {
 
   useEffect(() => {
     const load = async () => {
-      const [songsRes, genresRes] = await Promise.all([
-        axios.get("https://qtify-backend.labs.crio.do/songs"),
-        axios.get("https://qtify-backend.labs.crio.do/genres"),
-      ]);
-      setSongs(songsRes.data);
-      setGenres(genresRes.data.data);
+      try {
+        const [songsRes, genresRes] = await Promise.all([
+          axios.get("https://qtify-backend.labs.crio.do/songs"),
+          axios.get("https://qtify-backend.labs.crio.do/genres"),
+        ]);
+        console.log("Songs data:", songsRes.data);
+        console.log("Genres data:", genresRes.data);
+        setSongs(songsRes.data);
+        setGenres(genresRes.data.data || genresRes.data || []);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
     };
     load();
   }, []);
@@ -26,9 +32,9 @@ export default function Songs() {
   const activeGenre = genres[value]?.key || "all";
 
   const filtered = useMemo(() => {
-    if (activeGenre === "all") return songs;
-    return songs.filter((s) => s.genre.key === activeGenre);
-  }, [songs, activeGenre]);
+    if (value === 0 || activeGenre === "all") return songs;
+    return songs.filter((s) => s.genre?.key === activeGenre);
+  }, [songs, activeGenre, value]);
 
   return (
     <section className={styles.section}>
@@ -47,9 +53,9 @@ export default function Songs() {
           marginBottom: 2,
         }}
       >
-        {genres.map((g, idx) => (
+        {genres.length > 0 ? genres.map((g, idx) => (
           <Tab key={g.key || idx} label={g.label} />
-        ))}
+        )) : <Tab label="All" />}
       </Tabs>
       <Carousel
         items={filtered}
